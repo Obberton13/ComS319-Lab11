@@ -1,0 +1,31 @@
+<html>
+<head>
+<!-- This is the websocket SERVER -->
+<script src="http://localhost:5000/socket.io/socket.io.js"></script>
+
+</head>
+<body>
+<div id="msg"></div>
+<div id="people"></div>
+<script>
+	var username = window.prompt("Please enter your username: ", "");
+	// connect to WEBSOCKET server
+	var socket = io.connect('http://localhost:5000');
+
+	// Fire an event (that the server will handle
+	socket.emit('join', username);
+
+	// Attach event handler for event fired by server
+	socket.on('server', function(data) {
+		var elem = document.getElementById('msg'); 
+		console.log(data);
+		elem.innerHTML = "<br>" + data + elem.innerHTML; // append data that we got back
+	});
+	
+	socket.on('userOK', function(data) 
+	{
+		console.log("We good." + data);
+	});
+</script>
+</body>
+</html>

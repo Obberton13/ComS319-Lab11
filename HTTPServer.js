@@ -17,6 +17,7 @@ var server = http.createServer();
 // attach handler
 server.on('request', function (req,res) {
   var file = path.normalize('.' + req.url);
+  console.log(file);
 
   fs.exists(file, function(exists) {
     if (exists) {
