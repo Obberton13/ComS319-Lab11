@@ -4,28 +4,81 @@
 <script src="http://localhost:5000/socket.io/socket.io.js"></script>
 
 </head>
+<form method="post" id="postform">
+	<input type="text" id="typedMessage" autofocus>
+	<input type="submit" value="Post">
+	<input type="submit" value="logout" onclick="location.reload(); return false;">
+</form>
 <body>
-<div id="msg"></div>
-<div id="people"></div>
+<table>
+	<thead>
+		<tr>
+			<th>
+				People
+			</th>
+			<th>
+				Messages
+			</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td><div id="people"></div></td>
+			<td><div id="msg"></div></td>
+		</tr>
+	</tbody>
+</table>
+<div id="error" style="color: red;"></div>	
 <script>
 	var username = window.prompt("Please enter your username: ", "");
+	if(username===null)
+	{
+		var elem = document.getElementById('error');
+		elem.innerHTML = "<h1>Unable to connect: No Username Provided</h1>";
+		throw new Error('No username provided, aborting.');
+	}
 	// connect to WEBSOCKET server
 	var socket = io.connect('http://localhost:5000');
+	
+	var isConnected = false;
 
 	// Fire an event (that the server will handle
-	socket.emit('join', username);
+	socket.emit('JOIN', username);
 
 	// Attach event handler for event fired by server
-	socket.on('server', function(data) {
+	socket.on('PRIVMSG', function(data) {
 		var elem = document.getElementById('msg'); 
 		console.log(data);
-		elem.innerHTML = "<br>" + data + elem.innerHTML; // append data that we got back
+		elem.innerHTML = data +'<br>'+ elem.innerHTML; // append data that we got back
 	});
-	
-	socket.on('userOK', function(data) 
+	socket.on('nameInUse', function(data) 
 	{
-		console.log("We good." + data);
+		username = window.prompt("That username is already in use. Please enter a different name: ", "");
+		socket.emit('JOIN', username);
 	});
+	socket.on('WHO', function(data){
+		var peopleList = document.getElementById('people');
+		peopleList.innerHTML = "";
+		for(var i = 0; i < data.length; i++)
+		{
+			peopleList.innerHTML += "<br>"+data[i];
+		}
+	});
+	socket.on('allMessages', function(messages){
+		console.log('allMessages sent!', messages);
+		var msgs = document.getElementById('msg');
+		msgs.innerHTML = "";
+		for(var i = 0; i < messages.length; i++)
+		{
+			msgs.innerHTML = messages[i] + "<br>" + msgs.innerHTML;
+		}
+	});
+	document.getElementById("postform").onsubmit = function() {
+		var messageElement = document.getElementById('typedMessage');
+		socket.emit("PRIVMSG", username+": "+messageElement.value);
+		messageElement.value = "";
+		return false;
+	};
 </script>
 </body>
 </html>

@@ -35,18 +35,39 @@ Array.prototype.contains = function(obj) {
 
 var io = require('socket.io').listen(5000);
 
-var $ = require('jquery');
-
 var users = [];
 
-var sockets = [];
+var messages = [];
 
 io.sockets.on('connection', function(socket) {
-	socket.on('join', function(content) {
-		if(!users.contains(content))
+	var username;
+	socket.on('JOIN', function(content) {
+		if(users.contains(content))
 		{
-			socket.emit('userOK', content);
-			socket.emit('userlist', users);
+			socket.emit('nameInUse', content);
+			return;
 		}
+		username = content;
+		users.push(content);
+		io.sockets.emit('WHO', users);
+		socket.emit('allMessages', messages);
+	});
+	socket.on('disconnect', function(content)
+	{
+		if(users.contains(username))
+		{
+			var index = users.indexOf(username);
+			if(index > -1)
+			{
+				users.splice(index, 1);
+			}
+		}
+		//I know, it is terribly inefficient to send all users all the time. Oh well.
+		socket.emit('WHO', users);
+	});
+	socket.on('PRIVMSG', function(content){
+		messages.push(content);
+		console.log(messages);
+		io.sockets.emit('PRIVMSG', content);
 	});
 });
